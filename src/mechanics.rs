@@ -1,7 +1,8 @@
 use bevy::prelude::*;
 use bevy::window::Window;
 use crate::player;
-use crate::{Asteroid, AsteroidSize, spawn_asteroid, ASTEROID_MEDIUM_SPEED, ASTEROID_SMALL_SPEED, GameState};
+use crate::{GameState};
+use crate::asteroid::{Asteroid, AsteroidSize, spawn_asteroid, ASTEROID_MEDIUM_SPEED, ASTEROID_SMALL_SPEED};
 use rand::prelude::*;
 
 pub const BULLET_SPEED: f32 = 500.0;
