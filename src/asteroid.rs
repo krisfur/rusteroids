@@ -31,6 +31,7 @@ pub fn spawn_asteroid(
     size: AsteroidSize,
     position: Vec3,
     velocity: Vec2,
+    asteroid_handle: &Handle<Image>,
 ) {
     let (asteroid_size, color) = match size {
         AsteroidSize::Large => (ASTEROID_LARGE_SIZE, Color::srgb(0.5, 0.5, 0.5)),
@@ -40,6 +41,7 @@ pub fn spawn_asteroid(
 
     commands.spawn((
         Sprite {
+            image: asteroid_handle.clone(),
             color,
             custom_size: Some(Vec2::new(asteroid_size, asteroid_size)),
             ..default()
@@ -55,6 +57,7 @@ pub fn spawn_asteroid(
 pub fn spawn_initial_asteroids(
     mut commands: Commands,
     windows: Query<&Window>,
+    asteroid_handle: &Handle<Image>,
 ) {
     let window = windows.single().unwrap();
     let mut rng = rand::thread_rng();
@@ -76,7 +79,7 @@ pub fn spawn_initial_asteroids(
         let speed = ASTEROID_LARGE_SPEED;
         let velocity = Vec2::new(angle.cos() * speed, angle.sin() * speed);
 
-        spawn_asteroid(&mut commands, AsteroidSize::Large, position, velocity);
+        spawn_asteroid(&mut commands, AsteroidSize::Large, position, velocity, asteroid_handle);
     }
 }
 

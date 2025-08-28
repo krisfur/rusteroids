@@ -9,13 +9,41 @@ mod asteroid;
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
-    #[default]
+    #[default] // <-- This is now the starting state
+    Loading,
     Playing,
     GameOver,
 }
 
 #[derive(Component)]
 struct GameOverUi;
+
+#[derive(Resource)]
+pub struct GameAssets {
+    player: Handle<Image>,
+    asteroid: Handle<Image>,
+}
+
+fn load_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.insert_resource(GameAssets {
+        player: asset_server.load("sprites/player.png"),
+        asteroid: asset_server.load("sprites/asteroid.png"),
+    });
+}
+
+fn check_assets_loaded(
+    mut next_state: ResMut<NextState<GameState>>,
+    game_assets: Res<GameAssets>,
+    asset_server: Res<AssetServer>,
+) {
+    let player_loaded = asset_server.is_loaded_with_dependencies(&game_assets.player);
+    let asteroid_loaded = asset_server.is_loaded_with_dependencies(&game_assets.asteroid);
+
+    if player_loaded && asteroid_loaded {
+        // All assets are now loaded, we can transition to the Playing state
+        next_state.set(GameState::Playing);
+    }
+}
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn((Camera2d::default(), Msaa::Off));
@@ -97,10 +125,10 @@ fn handle_game_over_input(
 fn spawn_game_entities(
     mut commands: Commands,
     windows: Query<&Window>,
-    asset_server: Res<AssetServer>,
+    assets: Res<GameAssets>,
 ) {
-    player::spawn_player(&mut commands, asset_server);
-    asteroid::spawn_initial_asteroids(commands, windows);
+    player::spawn_player(&mut commands, &assets.player);
+    asteroid::spawn_initial_asteroids(commands, windows, &assets.asteroid);
 }
 
 fn main() {
@@ -114,9 +142,15 @@ fn main() {
             }),
             ..default()
         }))
-        .init_state::<GameState>()
-        .add_systems(Startup, setup_camera)
+        .init_state::<GameState>() // Starts in GameState::Loading
+        .add_systems(Startup, (setup_camera, load_assets))
+
+        // This system now runs every frame ONLY when in the Loading state
+        .add_systems(Update, check_assets_loaded.run_if(in_state(GameState::Loading)))
+
+        // This will now run correctly AFTER check_assets_loaded switches the state
         .add_systems(OnEnter(GameState::Playing), spawn_game_entities)
+
         .add_plugins(asteroid::AsteroidPlugin)
         .add_systems(OnEnter(GameState::GameOver), display_game_over_ui)
         .add_systems(OnExit(GameState::GameOver), despawn_game_over_ui)

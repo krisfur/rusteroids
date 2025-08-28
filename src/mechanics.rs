@@ -4,6 +4,8 @@ use crate::player;
 use crate::{GameState};
 use crate::asteroid::{Asteroid, AsteroidSize, spawn_asteroid, ASTEROID_MEDIUM_SPEED, ASTEROID_SMALL_SPEED};
 use rand::prelude::*;
+use crate::GameAssets;
+
 
 pub const BULLET_SPEED: f32 = 500.0;
 pub const BULLET_LIFETIME: f32 = 2.0;
@@ -119,6 +121,7 @@ fn bullet_asteroid_collision(
     bullet_query: Query<(Entity, &Transform), With<Bullet>>,
     asteroid_query: Query<(Entity, &Transform, &AsteroidSize), With<Asteroid>>,
     windows: Query<&Window>,
+    assets: Res<GameAssets>,
 ) {
     let Ok(_window) = windows.single() else { return; }; // Prefix with _
     let mut rng = rand::thread_rng();
@@ -145,7 +148,7 @@ fn bullet_asteroid_collision(
                             let angle = rng.gen_range(0.0..2.0 * std::f32::consts::PI);
                             let speed = ASTEROID_MEDIUM_SPEED;
                             let velocity = Vec2::new(angle.cos() * speed, angle.sin() * speed);
-                            spawn_asteroid(&mut commands, AsteroidSize::Medium, asteroid_transform.translation, velocity);
+                            spawn_asteroid(&mut commands, AsteroidSize::Medium, asteroid_transform.translation, velocity, &assets.asteroid);
                         }
                     }
                     AsteroidSize::Medium => {
@@ -153,7 +156,7 @@ fn bullet_asteroid_collision(
                             let angle = rng.gen_range(0.0..2.0 * std::f32::consts::PI);
                             let speed = ASTEROID_SMALL_SPEED;
                             let velocity = Vec2::new(angle.cos() * speed, angle.sin() * speed);
-                            spawn_asteroid(&mut commands, AsteroidSize::Small, asteroid_transform.translation, velocity);
+                            spawn_asteroid(&mut commands, AsteroidSize::Small, asteroid_transform.translation, velocity, &assets.asteroid);
                         }
                     }
                     AsteroidSize::Small => {
@@ -204,6 +207,6 @@ impl Plugin for MechanicsPlugin {
             despawn_out_of_bounds_bullets,
             bullet_asteroid_collision,
             player_asteroid_collision,
-        ).chain().run_if(in_state(GameState::Playing)));
+        ).run_if(in_state(GameState::Playing)));
     }
 }

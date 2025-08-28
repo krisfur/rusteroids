@@ -1,4 +1,4 @@
-use bevy::{asset, prelude::*};
+use bevy::prelude::*;
 use crate::GameState;
 
 pub const PLAYER_ROTATION_SPEED: f32 = 2.5;
@@ -10,10 +10,10 @@ pub struct Player;
 #[derive(Component, Default)]
 pub struct PlayerVelocity(pub Vec2);
 
-pub fn spawn_player(commands: &mut Commands, asset_server: Res<AssetServer>) {
+pub fn spawn_player(commands: &mut Commands, player_handle: &Handle<Image>) {
     commands.spawn((
         Sprite {
-            image: asset_server.load("sprites/player.png"),
+            image: player_handle.clone(),
             color: Color::srgb(0.7, 0.7, 0.8),
             custom_size: Some(Vec2::new(75.0, 75.0)),
             ..default()
