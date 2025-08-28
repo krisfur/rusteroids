@@ -1,6 +1,10 @@
 # 🦀🚀 Rusteroids
 
-Modern remake of the old-school asteroids in `Rust` with `Bevy 0.16.1`, just for fun.
+![Rust](https://img.shields.io/badge/Rust-000000?style=flat&logo=rust&logoColor=white)
+
+Modern remake of the old-school asteroids in `Rust` with `Bevy 0.16.1`, just for fun. 
+
+Docs for this version of `Bevy` are [here](https://docs.rs/bevy/0.16.1/bevy/index.html).
 
 ![screenshot](screenshot.png)
 
