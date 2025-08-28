@@ -34,6 +34,30 @@ pub struct Score(pub u32);
 #[derive(Resource)]
 pub struct AsteroidSpawnTimer(pub Timer);
 
+fn setup_background(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut windows: Query<&mut Window>,
+) {
+    let window = windows.single_mut().unwrap();
+    let background_handle: Handle<Image> = asset_server.load("background.png");
+
+    commands.spawn((
+        // The image handle is a component
+        // The sprite component defines how to render the image
+        Sprite {
+            image: background_handle.clone(),
+            
+            // Scale the sprite to fill the entire window
+            custom_size: Some(Vec2::new(window.width(), window.height())),
+            ..default()
+        },
+        // The transform component defines the position
+        // Set Z to a negative value to ensure it's drawn behind other sprites
+        Transform::from_xyz(0.0, 0.0, -1.0),
+    ));
+}
+
 fn load_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(GameAssets {
         player: asset_server.load("sprites/player.png"),
@@ -236,7 +260,7 @@ fn main() {
             ..default()
         }))
         .init_state::<GameState>() // Starts in GameState::Loading
-        .add_systems(Startup, (setup_camera, load_assets, setup_score_display))
+        .add_systems(Startup, (setup_camera, setup_background, load_assets, setup_score_display))
         .insert_resource(Score(0))
         .insert_resource(AsteroidSpawnTimer(Timer::from_seconds(5.0, TimerMode::Repeating)))
 
