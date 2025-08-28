@@ -97,8 +97,9 @@ fn handle_game_over_input(
 fn spawn_game_entities(
     mut commands: Commands,
     windows: Query<&Window>,
+    asset_server: Res<AssetServer>,
 ) {
-    player::spawn_player(&mut commands);
+    player::spawn_player(&mut commands, asset_server);
     asteroid::spawn_initial_asteroids(commands, windows);
 }
 
