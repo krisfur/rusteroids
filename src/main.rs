@@ -18,11 +18,20 @@ pub enum GameState {
 #[derive(Component)]
 struct GameOverUi;
 
+#[derive(Component)]
+struct ScoreText;
+
 #[derive(Resource)]
 pub struct GameAssets {
     player: Handle<Image>,
     asteroid: Handle<Image>,
 }
+
+#[derive(Resource)]
+pub struct Score(pub u32);
+
+#[derive(Resource)]
+pub struct AsteroidSpawnTimer(pub Timer);
 
 fn load_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(GameAssets {
@@ -47,6 +56,48 @@ fn check_assets_loaded(
 
 fn setup_camera(mut commands: Commands) {
     commands.spawn((Camera2d::default(), Msaa::Off));
+}
+
+fn setup_score_display(mut commands: Commands, asset_server: Res<AssetServer>) {
+    let font_handle: Handle<Font> = asset_server.load("fonts/FiraSans-Bold.ttf");
+
+    // Spawn the root node for positioning
+    commands.spawn((
+        // This Node component positions the score in the top-left corner
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(10.0),
+            left: Val::Px(10.0),
+            ..default()
+        },
+        // It's good practice to give root UI nodes a transparent background
+        BackgroundColor(Color::NONE),
+    ))
+    .with_children(|parent| {
+        // Spawn the text entity as a child
+        parent.spawn((
+            Text::new("Score: 0"),
+            TextFont {
+                font: font_handle,
+                font_size: 30.0,
+                ..default()
+            },
+            TextColor(Color::WHITE),
+            ScoreText, // The marker component to find and update this text
+        ));
+    });
+}
+
+fn update_score_display(
+    score: Res<Score>,
+    mut query: Query<&mut Text, With<ScoreText>>,
+) {
+    if score.is_changed() {
+        if let Ok(mut text) = query.single_mut() {
+            // CORRECTED: Access the sections Vec with .0
+            text.0 = format!("Score: {}", score.0);
+        }
+    }
 }
 
 
@@ -108,12 +159,16 @@ fn handle_game_over_input(
     player_query: Query<Entity, With<player::Player>>,
     bullet_query: Query<Entity, With<mechanics::Bullet>>,
     asteroid_query: Query<Entity, With<asteroid::Asteroid>>,
+    mut score: ResMut<Score>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         // Despawn all game entities
         for entity in player_query.iter().chain(bullet_query.iter()).chain(asteroid_query.iter()) {
             commands.entity(entity).despawn();
         }
+
+        // Reset score
+        score.0 = 0;
 
         // Transition to Playing state
         game_state.set(GameState::Playing);
@@ -143,7 +198,9 @@ fn main() {
             ..default()
         }))
         .init_state::<GameState>() // Starts in GameState::Loading
-        .add_systems(Startup, (setup_camera, load_assets))
+        .add_systems(Startup, (setup_camera, load_assets, setup_score_display))
+        .insert_resource(Score(0))
+        .insert_resource(AsteroidSpawnTimer(Timer::from_seconds(5.0, TimerMode::Repeating)))
 
         // This system now runs every frame ONLY when in the Loading state
         .add_systems(Update, check_assets_loaded.run_if(in_state(GameState::Loading)))
@@ -155,6 +212,7 @@ fn main() {
         .add_systems(OnEnter(GameState::GameOver), display_game_over_ui)
         .add_systems(OnExit(GameState::GameOver), despawn_game_over_ui)
         .add_systems(Update, handle_game_over_input.run_if(in_state(GameState::GameOver)))
+        .add_systems(Update, update_score_display.run_if(in_state(GameState::Playing)))
         .add_plugins(player::PlayerPlugin)
         .add_plugins(mechanics::MechanicsPlugin)
         .run();

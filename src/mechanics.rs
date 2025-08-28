@@ -5,7 +5,7 @@ use crate::{GameState};
 use crate::asteroid::{Asteroid, AsteroidSize, spawn_asteroid, ASTEROID_MEDIUM_SPEED, ASTEROID_SMALL_SPEED};
 use rand::prelude::*;
 use crate::GameAssets;
-
+use crate::Score;
 
 pub const BULLET_SPEED: f32 = 500.0;
 pub const BULLET_LIFETIME: f32 = 2.0;
@@ -122,6 +122,7 @@ fn bullet_asteroid_collision(
     asteroid_query: Query<(Entity, &Transform, &AsteroidSize), With<Asteroid>>,
     windows: Query<&Window>,
     assets: Res<GameAssets>,
+    mut score: ResMut<Score>,
 ) {
     let Ok(_window) = windows.single() else { return; }; // Prefix with _
     let mut rng = rand::thread_rng();
@@ -144,6 +145,7 @@ fn bullet_asteroid_collision(
 
                 match asteroid_size {
                     AsteroidSize::Large => {
+                        score.0 += 20;
                         for _ in 0..2 {
                             let angle = rng.gen_range(0.0..2.0 * std::f32::consts::PI);
                             let speed = ASTEROID_MEDIUM_SPEED;
@@ -152,6 +154,7 @@ fn bullet_asteroid_collision(
                         }
                     }
                     AsteroidSize::Medium => {
+                        score.0 += 50;
                         for _ in 0..2 {
                             let angle = rng.gen_range(0.0..2.0 * std::f32::consts::PI);
                             let speed = ASTEROID_SMALL_SPEED;
@@ -161,6 +164,7 @@ fn bullet_asteroid_collision(
                     }
                     AsteroidSize::Small => {
                         // Small asteroids just disappear
+                        score.0 += 100;
                     }
                 }
             }
