@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::window::{PresentMode, Window};
+use rand::Rng;
 
 
 mod player;
@@ -100,6 +101,43 @@ fn update_score_display(
     }
 }
 
+fn spawn_asteroids_over_time(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut timer: ResMut<AsteroidSpawnTimer>,
+    windows: Query<&Window>,
+    assets: Res<GameAssets>,
+) {
+    // Tick the timer
+    timer.0.tick(time.delta());
+
+    // If the timer just finished, spawn a new asteroid
+    if timer.0.just_finished() {
+        let window = windows.single().unwrap();
+        let mut rng = rand::thread_rng();
+
+        // Choose a random edge of the screen to spawn from
+        let edge = rng.gen_range(0..4);
+        let (x, y) = match edge {
+            0 => (rng.gen_range(-window.width() / 2.0..window.width() / 2.0), window.height() / 2.0 + 50.0), // Top
+            1 => (rng.gen_range(-window.width() / 2.0..window.width() / 2.0), -window.height() / 2.0 - 50.0), // Bottom
+            2 => (-window.width() / 2.0 - 50.0, rng.gen_range(-window.height() / 2.0..window.height() / 2.0)), // Left
+            _ => (window.width() / 2.0 + 50.0, rng.gen_range(-window.height() / 2.0..window.height() / 2.0)), // Right
+        };
+        let position = Vec3::new(x, y, 0.0);
+
+        // Aim the asteroid towards the center with some randomness
+        let direction_to_center = (Vec3::ZERO - position).normalize_or_zero();
+        let angle_offset = rng.gen_range(-0.5..0.5); // Approx +/- 28 degrees
+        let final_direction = Quat::from_rotation_z(angle_offset) * direction_to_center;
+        
+        let speed = asteroid::ASTEROID_LARGE_SPEED;
+        let velocity = final_direction.truncate() * speed;
+
+        // Use your existing helper function to spawn the asteroid
+        asteroid::spawn_asteroid(&mut commands, asteroid::AsteroidSize::Large, position, velocity, &assets.asteroid);
+    }
+}
 
 fn display_game_over_ui(
     mut commands: Commands,
@@ -213,6 +251,7 @@ fn main() {
         .add_systems(OnExit(GameState::GameOver), despawn_game_over_ui)
         .add_systems(Update, handle_game_over_input.run_if(in_state(GameState::GameOver)))
         .add_systems(Update, update_score_display.run_if(in_state(GameState::Playing)))
+        .add_systems(Update, spawn_asteroids_over_time.run_if(in_state(GameState::Playing)))
         .add_plugins(player::PlayerPlugin)
         .add_plugins(mechanics::MechanicsPlugin)
         .run();
