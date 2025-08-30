@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::GameState;
+use bevy::prelude::*;
 
 pub const PLAYER_ROTATION_SPEED: f32 = 2.5;
 pub const PLAYER_THRUST_FORCE: f32 = 100.0;
@@ -27,21 +27,60 @@ pub fn spawn_player(commands: &mut Commands, player_handle: &Handle<Image>) {
 
 pub fn player_movement(
     keyboard_input: Res<ButtonInput<KeyCode>>,
+    gamepads: Query<&Gamepad>,
     mut player_query: Query<(&mut Transform, &mut PlayerVelocity), With<Player>>,
     time: Res<Time>,
 ) {
-    let Some((mut player_transform, mut player_velocity)) = player_query.single_mut().ok() else { return; };
+    let Some((mut player_transform, mut player_velocity)) = player_query.single_mut().ok() else {
+        return;
+    };
 
-    // Rotation
+    let mut rotation_input = 0.0;
+    let mut thrust_input = false;
+
+    // Keyboard
     if keyboard_input.pressed(KeyCode::ArrowLeft) || keyboard_input.pressed(KeyCode::KeyA) {
-        player_transform.rotate_z(PLAYER_ROTATION_SPEED * time.delta_secs());
+        rotation_input += 1.0;
     }
     if keyboard_input.pressed(KeyCode::ArrowRight) || keyboard_input.pressed(KeyCode::KeyD) {
-        player_transform.rotate_z(-PLAYER_ROTATION_SPEED * time.delta_secs());
+        rotation_input -= 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
+        thrust_input = true;
+    }
+
+    // Gamepad
+    if let Some(gamepad) = gamepads.iter().next() {
+        if gamepad.pressed(GamepadButton::DPadLeft) {
+            rotation_input += 1.0;
+        }
+        if gamepad.pressed(GamepadButton::DPadRight) {
+            rotation_input -= 1.0;
+        }
+        if gamepad.pressed(GamepadButton::DPadUp) {
+            thrust_input = true;
+        }
+
+        if let Some(left_stick_x) = gamepad.get(GamepadAxis::LeftStickX) {
+            if left_stick_x.abs() > 0.1 {
+                rotation_input -= left_stick_x;
+            }
+        }
+        if let Some(left_stick_y) = gamepad.get(GamepadAxis::LeftStickY) {
+            if left_stick_y > 0.1 {
+                thrust_input = true;
+            }
+        }
+    }
+
+    // Rotation
+    if rotation_input != 0.0 {
+        player_transform
+            .rotate_z(rotation_input.clamp(-1.0, 1.0) * PLAYER_ROTATION_SPEED * time.delta_secs());
     }
 
     // Thrust
-    if keyboard_input.pressed(KeyCode::ArrowUp) || keyboard_input.pressed(KeyCode::KeyW) {
+    if thrust_input {
         let forward = player_transform.rotation * Vec3::Y;
         player_velocity.0 += forward.truncate() * PLAYER_THRUST_FORCE * time.delta_secs();
     }

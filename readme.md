@@ -17,3 +17,15 @@ Docs for this version of `Bevy` are [here](https://docs.rs/bevy/0.16.1/bevy/inde
 ```bash
 cargo run
 ```
+
+## Controls
+
+### Keyboard
+- **Thrust:** `W` or `Up Arrow`
+- **Rotate:** `A`/`D` or `Left`/`Right Arrows`
+- **Shoot:** `Spacebar`
+
+### Gamepad (Xbox/Playstation)
+- **Thrust:** `D-Pad Up` or `Left Stick Up`
+- **Rotate:** `D-Pad Left/Right` or `Left Stick Left/Right`
+- **Shoot:** `A` / `X` (South button)
