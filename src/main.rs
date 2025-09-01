@@ -1,11 +1,14 @@
 use bevy::prelude::*;
-use bevy::window::{PresentMode, Window};
+use bevy::window::{PresentMode, Window, WindowResized};
 use rand::Rng;
 
 mod mechanics;
 mod player;
 
 mod asteroid;
+
+#[derive(Component)]
+struct Background;
 
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
@@ -54,7 +57,19 @@ fn setup_background(
         // The transform component defines the position
         // Set Z to a negative value to ensure it's drawn behind other sprites
         Transform::from_xyz(0.0, 0.0, -1.0),
+        Background,
     ));
+}
+
+fn resize_background(
+    mut resize_reader: EventReader<WindowResized>,
+    mut background_query: Query<&mut Sprite, With<Background>>,
+) {
+    for e in resize_reader.read() {
+        if let Ok(mut sprite) = background_query.single_mut() {
+            sprite.custom_size = Some(Vec2::new(e.width, e.height));
+        }
+    }
 }
 
 fn load_assets(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -314,11 +329,11 @@ fn main() {
         )
         .add_systems(
             Update,
-            update_score_display.run_if(in_state(GameState::Playing)),
-        )
-        .add_systems(
-            Update,
-            spawn_asteroids_over_time.run_if(in_state(GameState::Playing)),
+            (
+                update_score_display.run_if(in_state(GameState::Playing)),
+                spawn_asteroids_over_time.run_if(in_state(GameState::Playing)),
+                resize_background,
+            ),
         )
         .add_plugins(player::PlayerPlugin)
         .add_plugins(mechanics::MechanicsPlugin)
