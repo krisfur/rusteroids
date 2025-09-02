@@ -1,8 +1,8 @@
 use crate::asteroid::{
     ASTEROID_MEDIUM_SPEED, ASTEROID_SMALL_SPEED, Asteroid, AsteroidSize, spawn_asteroid,
 };
-use crate::player;
 use crate::{GameAssets, GameState, Score};
+use crate::{Godmode, player};
 use bevy::prelude::*;
 use bevy::window::Window;
 use rand::prelude::*;
@@ -210,6 +210,7 @@ fn player_asteroid_collision(
     player_query: Query<(Entity, &Transform), With<player::Player>>,
     asteroid_query: Query<(&Transform, &AsteroidSize), With<Asteroid>>,
     mut game_state: ResMut<NextState<GameState>>,
+    godmode: Res<Godmode>,
 ) {
     let Ok((player_entity, player_transform)) = player_query.single() else {
         return;
@@ -227,7 +228,7 @@ fn player_asteroid_collision(
         let distance = player_transform
             .translation
             .distance(asteroid_transform.translation);
-        if distance < (player_size / 2.0 + asteroid_current_size / 2.0) {
+        if distance < (player_size / 2.0 + asteroid_current_size / 2.0) && !godmode.0 {
             // Collision detected! Game Over
             println!("Game Over! Player hit an asteroid.");
             commands.entity(player_entity).despawn();
