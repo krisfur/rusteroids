@@ -263,7 +263,7 @@ fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
     let button_node = Node {
         width: Val::Px(200.0),
         height: Val::Px(65.0),
-        margin: UiRect::all(Val::Px(20.0)),
+        margin: UiRect::all(Val::Px(10.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..default()
@@ -308,7 +308,7 @@ fn sound_settings_menu_setup(mut commands: Commands, volume: Res<Volume>) {
                                 let mut entity = parent.spawn((
                                     Button,
                                     Node {
-                                        width: Val::Px(30.0),
+                                        width: Val::Px(20.0),
                                         height: Val::Px(65.0),
                                         ..button_node_clone.clone()
                                     },
