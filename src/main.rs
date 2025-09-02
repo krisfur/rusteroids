@@ -2,10 +2,12 @@ use bevy::prelude::*;
 use bevy::window::{PresentMode, Window, WindowResized};
 use rand::Rng;
 
+mod asteroid;
 mod mechanics;
 mod player;
 
-mod asteroid;
+mod menu;
+mod splash;
 
 #[derive(Component)]
 struct Background;
@@ -13,10 +15,20 @@ struct Background;
 #[derive(States, Debug, Clone, PartialEq, Eq, Hash, Default)]
 pub enum GameState {
     #[default] // <-- This is now the starting state
+    Splash,
+    Menu,
     Loading,
     Playing,
     GameOver,
 }
+
+// One of the two settings that can be set through the menu. It will be a resource in the app
+#[derive(Resource, Debug, Component, PartialEq, Eq, Clone, Copy)]
+struct Godmode(bool);
+
+// One of the two settings that can be set through the menu. It will be a resource in the app
+#[derive(Resource, Debug, Component, PartialEq, Eq, Clone, Copy)]
+struct Volume(u32);
 
 #[derive(Component)]
 struct GameOverUi;
@@ -35,6 +47,13 @@ pub struct Score(pub u32);
 
 #[derive(Resource)]
 pub struct AsteroidSpawnTimer(pub Timer);
+
+// Generic system that takes a component as a parameter, and will despawn all entities with that component
+fn despawn_screen<T: Component>(to_despawn: Query<Entity, With<T>>, mut commands: Commands) {
+    for entity in &to_despawn {
+        commands.entity(entity).despawn();
+    }
+}
 
 fn setup_background(
     mut commands: Commands,
@@ -299,14 +318,12 @@ fn main() {
             ..default()
         }))
         .init_state::<GameState>() // Starts in GameState::Loading
+        .insert_resource(Godmode(false))
+        .insert_resource(Volume(7))
+        .add_systems(Startup, setup_camera)
         .add_systems(
-            Startup,
-            (
-                setup_camera,
-                setup_background,
-                load_assets,
-                setup_score_display,
-            ),
+            OnEnter(GameState::Loading),
+            (setup_background, load_assets, setup_score_display),
         )
         .insert_resource(Score(0))
         .insert_resource(AsteroidSpawnTimer(Timer::from_seconds(
@@ -337,5 +354,6 @@ fn main() {
         )
         .add_plugins(player::PlayerPlugin)
         .add_plugins(mechanics::MechanicsPlugin)
+        .add_plugins((splash::splash_plugin, menu::menu_plugin))
         .run();
 }
